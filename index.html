@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AstraResQ - Intelligent Emergency Response & Ambulance Dispatch System. High-performance command operations platform with dynamic route calculation and bottleneck intelligence.">
+  <title>AstraResQ | Emergency Operations Command Centre</title>
+
+  <!-- Google Fonts: Inter, Rajdhani & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6.5.1 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js 4.4.1 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="theme-black">
+
+  <!-- 1. INTRO SPLASH OVERLAY (Cinematic Application Intro) -->
+  <div id="intro-splash" class="intro-splash-screen" role="dialog" aria-modal="true" aria-label="AstraResQ System Booting">
+    <div class="splash-content">
+      <div class="splash-radar-pulse">
+        <div class="radar-core"><i class="fa-solid fa-truck-medical"></i></div>
+        <div class="pulse-wave wave-1"></div>
+        <div class="pulse-wave wave-2"></div>
+      </div>
+      <h1 class="splash-title">ASTRA<span class="text-danger">RESQ</span></h1>
+      <p class="splash-subtitle">INTELLIGENT EMERGENCY RESPONSE & DISPATCH PLATFORM</p>
+      <div class="splash-loader">
+        <div class="loader-bar"></div>
+      </div>
+      <div class="splash-disclaimer">
+        <span>BANGALORE RAPID RESPONSE GRID &bull; ACADEMIC DEMONSTRATION SIMULATOR</span>
+      </div>
+      <button id="skip-intro-btn" class="btn btn-outline-light btn-sm mt-3" aria-label="Skip Introduction">
+        <i class="fa-solid fa-forward-step me-1"></i> Skip Intro
+      </button>
+    </div>
+  </div>
+
+  <!-- 2. TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- 3. NOTIFICATION SLIDE-IN DRAWER -->
+  <aside id="notification-drawer" class="notification-drawer" aria-label="System Notifications Panel">
+    <div class="drawer-header">
+      <h3><i class="fa-solid fa-bell me-2 text-danger"></i> Incident Logs</h3>
+      <div class="drawer-actions">
+        <button id="btn-clear-notifications" class="btn-icon" title="Clear All Logs"><i class="fa-solid fa-trash-can"></i></button>
+        <button id="btn-close-drawer" class="btn-icon" title="Close Panel">&times;</button>
+      </div>
+    </div>
+    <div id="drawer-notification-list" class="drawer-body">
+      <!-- Dynamic notification items -->
+    </div>
+  </aside>
+
+  <!-- 4. TOP NAVIGATION BAR -->
+  <header class="top-navbar">
+    <div class="nav-brand">
+      <button id="mobile-sidebar-toggle" class="btn-icon mobile-only" aria-label="Toggle Sidebar Navigation">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="brand-logo">
+        <div class="brand-icon"><i class="fa-solid fa-staff-snake"></i></div>
+        <div class="brand-text">
+          <span class="brand-name">ASTRA<span class="text-danger">RESQ</span></span>
+          <span class="brand-tag">OPS COMMAND v2.4</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Digital Clock & Bangalore Zone -->
+    <div class="nav-clock d-none d-md-flex">
+      <div class="clock-indicator"><i class="fa-solid fa-satellite fa-fade text-success"></i></div>
+      <div class="clock-display">
+        <div id="live-clock" class="clock-time font-mono">00:00:00</div>
+        <div class="clock-meta">
+          <span id="live-date">Wed, 19 Nov 2026</span>
+          <span class="badge-zone">BLR / IST (UTC+5:30)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Demo Bar & Actions -->
+    <div class="nav-actions">
+      <!-- Fast Scenario Trigger Button -->
+      <button id="btn-quick-critical-test" class="btn btn-sm btn-critical-test d-none d-lg-inline-flex" title="Inject Test Cardiac Incident">
+        <i class="fa-solid fa-bolt-lightning me-1"></i> Quick Test: Critical Call
+      </button>
+
+      <!-- Audio Mute/Unmute -->
+      <button id="sound-toggle-btn" class="nav-tool-btn" title="Toggle Sound Alerts" aria-label="Toggle Audio Alerts">
+        <i id="sound-icon" class="fa-solid fa-volume-xmark text-muted"></i>
+      </button>
+
+      <!-- Black / White Theme Selector -->
+      <button id="theme-toggle-btn" class="nav-tool-btn" title="Toggle Black/White Theme" aria-label="Toggle Black/White Theme">
+        <i id="theme-icon" class="fa-solid fa-sun"></i>
+      </button>
+
+      <!-- Notification Bell -->
+      <button id="notif-bell-btn" class="nav-tool-btn position-relative" title="Notifications" aria-label="View Incident Notifications">
+        <i class="fa-solid fa-bell"></i>
+        <span id="notif-badge" class="badge-notif-pill" style="display: none;">0</span>
+      </button>
+
+      <!-- Operator Profile -->
+      <div class="operator-profile d-none d-sm-flex">
+        <div class="operator-avatar">
+          <i class="fa-solid fa-headset"></i>
+        </div>
+        <div class="operator-info">
+          <span class="operator-name">Officer In-Charge</span>
+          <span class="operator-role font-mono text-success">DISPATCH OPERATOR</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- 5. MAIN APPLICATION LAYOUT -->
+  <div class="app-layout">
+    <!-- Responsive Left Sidebar Navigation -->
+    <nav id="sidebar" class="app-sidebar" aria-label="Primary Navigation">
+      <ul class="sidebar-nav">
+        <li>
+          <a href="#" class="nav-item active" data-view="dashboard">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Command Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-view="dispatch">
+            <i class="fa-solid fa-map-location-dot"></i>
+            <span>Live Dispatch Center</span>
+            <span class="sidebar-pulse-dot"></span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-view="emergencies">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>Emergencies Intake</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-view="ambulances">
+            <i class="fa-solid fa-truck-medical"></i>
+            <span>Ambulance Fleet</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="nav-item" data-view="analytics">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Bottleneck & Analytics</span>
+          </a>
+        </li>
+      </ul>
+
+      <!-- Sidebar Footer Controls -->
+      <div class="sidebar-footer">
+        <div class="simulation-badge-card">
+          <div class="sim-title"><i class="fa-solid fa-microchip text-primary"></i> Academic Simulator</div>
+          <p class="sim-text">Bangalore coordinates and vehicles are simulated models.</p>
+          <button id="btn-reset-demo-data" class="btn btn-outline-secondary btn-xs w-100 mt-2">
+            <i class="fa-solid fa-rotate-left me-1"></i> Reset Demo Data
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Content Workspace -->
+    <main class="app-content">
+
+      <!-- ================================================================= -->
+      <!-- VIEW 1: COMMAND DASHBOARD -->
+      <!-- ================================================================= -->
+      <section id="view-dashboard" class="view-panel active-view">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Command Overview & Active Telemetry</h2>
+            <p class="view-subtitle">Real-time status of emergency units, active dispatches, and emergency calls across Bangalore.</p>
+          </div>
+          <div class="view-actions">
+            <button class="btn btn-primary btn-sm btn-ripple" onclick="navigateToSection('dispatch')">
+              <i class="fa-solid fa-paper-plane me-1"></i> Open Dispatch Console
+            </button>
+          </div>
+        </div>
+
+        <!-- 6 Academic Metric Statistics Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-bg-info">
+              <i class="fa-solid fa-truck-medical"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Total Ambulances</span>
+              <div id="stat-total-amb" class="stat-number font-mono">0</div>
+              <span class="stat-meta text-muted">Active in Fleet Registry</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-bg-success">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Available Ambulances</span>
+              <div id="stat-avail-amb" class="stat-number font-mono text-success">0</div>
+              <span class="stat-meta text-success"><i class="fa-solid fa-circle fa-fade"></i> Ready for Immediate Dispatch</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-bg-warning">
+              <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Active Emergencies</span>
+              <div id="stat-active-emg" class="stat-number font-mono text-warning">0</div>
+              <span class="stat-meta text-muted">Pending & In-Transit</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-bg-danger">
+              <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Critical Emergencies</span>
+              <div id="stat-critical-emg" class="stat-number font-mono text-danger">0</div>
+              <span class="stat-meta text-danger"><i class="fa-solid fa-triangle-exclamation"></i> High Priority Triage</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-bg-primary">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Completed Dispatches</span>
+              <div id="stat-completed-dsp" class="stat-number font-mono">0</div>
+              <span class="stat-meta text-muted">Resolved & Admitted</span>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon-wrapper icon-bg-emerald">
+              <i class="fa-solid fa-stopwatch"></i>
+            </div>
+            <div class="stat-details">
+              <span class="stat-label">Average Response Time</span>
+              <div id="stat-avg-time" class="stat-number font-mono text-success">0m</div>
+              <span class="stat-meta text-muted">Target National SLA &le; 8 min</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Split Columns -->
+        <div class="dashboard-split-grid mt-4">
+          <!-- Active Emergencies Queue -->
+          <div class="card dash-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h3 class="card-title"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i> Active Incidents Needing Action</h3>
+              <button class="btn btn-link btn-sm" onclick="navigateToSection('emergencies')">View All &rarr;</button>
+            </div>
+            <div class="card-body p-0">
+              <div id="dash-active-emergencies-list" class="incident-card-stack">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Ambulance Fleet Status Grid -->
+          <div class="card dash-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h3 class="card-title"><i class="fa-solid fa-satellite-dish text-primary me-2"></i> Fleet Deployment Matrix</h3>
+              <button class="btn btn-link btn-sm" onclick="navigateToSection('ambulances')">Manage Fleet &rarr;</button>
+            </div>
+            <div class="card-body">
+              <div id="dash-fleet-grid" class="fleet-overview-grid">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity Feed -->
+        <div class="card dash-card mt-4">
+          <div class="card-header">
+            <h3 class="card-title"><i class="fa-solid fa-clock-rotate-left text-muted me-2"></i> Recent Dispatch & Mission History</h3>
+          </div>
+          <div class="card-body">
+            <div id="dash-activity-feed" class="activity-feed">
+              <!-- Injected via JavaScript -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 2: LIVE DISPATCH CENTER (3-Panel Command Console) -->
+      <!-- ================================================================= -->
+      <section id="view-dispatch" class="view-panel">
+        <div class="dispatch-center-header">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-satellite fa-fade text-danger me-2"></i> Live Bangalore Dispatch Command Center</h2>
+            <div class="simulation-disclaimer-pill">
+              <i class="fa-solid fa-shield-halved text-warning me-1"></i> ACADEMIC SIMULATION — NOT REAL-WORLD DISPATCH OR GPS TRACKING
+            </div>
+          </div>
+
+          <!-- Evaluator Controlled Failure Switch -->
+          <div class="d-flex align-items-center gap-3">
+            <div class="form-check form-switch stress-test-switch" title="Simulates a network timeout during dispatch confirmation">
+              <input class="form-check-input" type="checkbox" id="simulate-failure-toggle">
+              <label class="form-check-label font-mono small text-warning" for="simulate-failure-toggle">
+                Simulate Network Timeout (Evaluation Test)
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Panel Grid -->
+        <div class="dispatch-three-panel-grid mt-3">
+          <!-- LEFT PANEL: Active Emergency Queue -->
+          <div class="panel-column dispatch-left-panel">
+            <div class="column-card h-100">
+              <div class="column-header">
+                <h3 class="column-title"><i class="fa-solid fa-list-ol me-2"></i> Incident Queue</h3>
+                <span class="badge bg-danger">Critical First</span>
+              </div>
+              <div id="dispatch-emergency-queue" class="queue-scrollable-list">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+          </div>
+
+          <!-- CENTER PANEL: Interactive Bangalore Simulation Map -->
+          <div class="panel-column dispatch-center-panel">
+            <div class="column-card map-card h-100">
+              <div class="map-toolbar">
+                <div class="map-tools-left">
+                  <span class="map-badge font-mono"><i class="fa-solid fa-crosshairs text-success me-1"></i> BANGALORE RADAR GRID</span>
+                  <select id="map-layer-filter" class="form-select form-select-xs d-inline-block w-auto ms-2">
+                    <option value="all">Layer: All Entities</option>
+                    <option value="emergencies">Layer: Emergencies Only</option>
+                    <option value="ambulances">Layer: Ambulances Only</option>
+                  </select>
+                </div>
+                <div class="map-tools-right">
+                  <button id="map-zoom-in" class="btn btn-xs btn-secondary" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+                  <button id="map-zoom-out" class="btn btn-xs btn-secondary" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+                  <button id="map-zoom-reset" class="btn btn-xs btn-secondary" title="Reset Map View"><i class="fa-solid fa-compress"></i></button>
+                </div>
+              </div>
+
+              <!-- Canvas Simulation Map -->
+              <div class="canvas-wrapper">
+                <canvas id="bangalore-canvas-map"></canvas>
+              </div>
+
+              <div class="map-footer-legend">
+                <div class="legend-item"><span class="legend-dot dot-critical"></span> Critical Call</div>
+                <div class="legend-item"><span class="legend-dot dot-high"></span> High Call</div>
+                <div class="legend-item"><span class="legend-dot dot-available"></span> Available Unit</div>
+                <div class="legend-item"><span class="legend-dot dot-transit"></span> Dispatched (Transit)</div>
+                <div class="legend-item"><span class="legend-dot dot-scene"></span> On Scene</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT PANEL: Intelligent Recommendation & Dispatch Action -->
+          <div class="panel-column dispatch-right-panel">
+            <div class="column-card h-100">
+              <div class="column-header">
+                <h3 class="column-title"><i class="fa-solid fa-microchip text-primary me-2"></i> Decision Engine</h3>
+                <span class="badge bg-primary">Automated</span>
+              </div>
+              <div id="dispatch-recommendation-console" class="console-scrollable-body">
+                <!-- Dynamically updated by dispatch.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 3: EMERGENCY MANAGEMENT & INTAKE -->
+      <!-- ================================================================= -->
+      <section id="view-emergencies" class="view-panel">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Emergency Intake & Incident Registry</h2>
+            <p class="view-subtitle">Register incoming 112/108 emergency calls with geographic validation and priority classification.</p>
+          </div>
+          <div class="view-actions">
+            <button id="btn-open-new-emergency" class="btn btn-danger btn-ripple">
+              <i class="fa-solid fa-plus me-1"></i> Register New Emergency
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="card mb-3">
+          <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-5">
+                <div class="input-icon-group">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="emg-search-input" class="form-control form-control-sm" placeholder="Search by ID, Patient name, Area, or Type...">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <select id="emg-filter-severity" class="form-select form-select-sm">
+                  <option value="all">Filter: All Severities</option>
+                  <option value="Critical">Critical</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select id="emg-filter-status" class="form-select form-select-sm">
+                  <option value="all">Filter: All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Assigned">Assigned</option>
+                  <option value="On Scene">On Scene</option>
+                  <option value="Resolved">Resolved</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emergencies Table -->
+        <div class="card">
+          <div class="card-body p-0 table-responsive">
+            <table class="table custom-table mb-0">
+              <thead>
+                <tr>
+                  <th>Emergency ID</th>
+                  <th>Patient & Phone</th>
+                  <th>Incident Type</th>
+                  <th>Severity</th>
+                  <th>Area / Coordinates</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="emergencies-table-body">
+                <!-- Populated via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 4: AMBULANCE FLEET MANAGEMENT -->
+      <!-- ================================================================= -->
+      <section id="view-ambulances" class="view-panel">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Ambulance Fleet & Equipment Registry</h2>
+            <p class="view-subtitle">Manage ALS, BLS, and Patient Transport units, driver assignments, and vehicle statuses.</p>
+          </div>
+          <div class="view-actions">
+            <button id="btn-open-new-ambulance" class="btn btn-primary btn-ripple">
+              <i class="fa-solid fa-plus me-1"></i> Register New Ambulance
+            </button>
+          </div>
+        </div>
+
+        <!-- Fleet Filter Toolbar -->
+        <div class="card mb-3">
+          <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-5">
+                <div class="input-icon-group">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="amb-search-input" class="form-control form-control-sm" placeholder="Search by ID, Vehicle No, Driver, or Area...">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <select id="amb-filter-status" class="form-select form-select-sm">
+                  <option value="all">Filter: All Statuses</option>
+                  <option value="Available">Available</option>
+                  <option value="Dispatched">Dispatched</option>
+                  <option value="On Scene">On Scene</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select id="amb-filter-type" class="form-select form-select-sm">
+                  <option value="all">Filter: All Vehicle Types</option>
+                  <option value="Advanced Life Support">Advanced Life Support (ALS)</option>
+                  <option value="Basic Life Support">Basic Life Support (BLS)</option>
+                  <option value="Patient Transport Vehicle">Patient Transport (PTV)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ambulance Table -->
+        <div class="card">
+          <div class="card-body p-0 table-responsive">
+            <table class="table custom-table mb-0">
+              <thead>
+                <tr>
+                  <th>Unit ID</th>
+                  <th>Plate Number</th>
+                  <th>Driver Contact</th>
+                  <th>Vehicle Capability</th>
+                  <th>Station Area</th>
+                  <th>Operational Status</th>
+                  <th>Status Override</th>
+                </tr>
+              </thead>
+              <tbody id="ambulance-table-body">
+                <!-- Populated via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 5: BOTTLENECK DETECTOR & ADVANCED ANALYTICS -->
+      <!-- ================================================================= -->
+      <section id="view-analytics" class="view-panel">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title"><i class="fa-solid fa-brain text-danger me-2"></i> Smart Emergency Bottleneck Detector & Analytics</h2>
+            <p class="view-subtitle">Algorithmic pattern recognition using JavaScript Maps, Sets, and reduction pipelines to eliminate dispatch latency.</p>
+          </div>
+        </div>
+
+        <!-- Intelligent Enhancement: Bottleneck Detector Cards -->
+        <div class="bottleneck-section mb-4">
+          <div class="section-badge-header mb-3">
+            <span class="badge bg-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> AI BOTTLENECK INSIGHTS</span>
+            <span class="text-muted small ms-2">Real-time heuristics analyzing active call frequency against stationed fleet density.</span>
+          </div>
+          <div id="bottleneck-insights-container" class="row">
+            <!-- Dynamically injected bottleneck insight cards -->
+          </div>
+        </div>
+
+        <!-- Chart.js Visualisation Matrix -->
+        <div class="charts-matrix-grid">
+          <!-- Chart 1: Severity Distribution -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-chart-pie text-danger me-2"></i> Severity Distribution</h3>
+            </div>
+            <div class="card-body chart-wrapper">
+              <canvas id="chart-severity"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 2: Emergency Types Breakdown -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-chart-area text-warning me-2"></i> Emergency Types Breakdown</h3>
+            </div>
+            <div class="card-body chart-wrapper">
+              <canvas id="chart-type"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 3: Area-wise Demand -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-city text-primary me-2"></i> Area-Wise Incident Frequency</h3>
+            </div>
+            <div class="card-body chart-wrapper">
+              <canvas id="chart-area-demand"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 4: Fleet Status & Utilisation -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-truck-ramp-box text-success me-2"></i> Ambulance Fleet Utilisation</h3>
+            </div>
+            <div class="card-body chart-wrapper">
+              <canvas id="chart-fleet-status"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 5: Response Times vs SLA Benchmark -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-wave-square text-info me-2"></i> Response Time vs National SLA (8m)</h3>
+            </div>
+            <div class="card-body chart-wrapper">
+              <canvas id="chart-response-time"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart 6: Case Outcomes -->
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3 class="card-title"><i class="fa-solid fa-circle-notch text-emerald me-2"></i> Incident Outcome Ratio</h3>
+            </div>
+            <div class="card-body chart-wrapper">
+              <canvas id="chart-outcome"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODALS -->
+  <!-- ===================================================================== -->
+
+  <!-- Modal: Register Emergency -->
+  <div id="modal-new-emergency" class="custom-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-emg-title">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3 id="modal-emg-title" class="modal-title"><i class="fa-solid fa-triangle-exclamation text-danger me-2"></i> Register New Emergency</h3>
+        <button id="btn-close-emergency-modal" class="btn-close-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="form-register-emergency">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="emg-patient-name">Patient Name *</label>
+              <input type="text" id="emg-patient-name" class="form-control" placeholder="e.g. Anand Murthy" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-contact-number">Contact Phone (10-15 digits) *</label>
+              <input type="tel" id="emg-contact-number" class="form-control" placeholder="+91 98765 43210" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-type-select">Emergency Type *</label>
+              <select id="emg-type-select" class="form-select" required>
+                <option value="">-- Select Incident Type --</option>
+                <option value="Road Accident">Road Accident</option>
+                <option value="Cardiac Emergency">Cardiac Emergency</option>
+                <option value="Fire Injury">Fire Injury</option>
+                <option value="Stroke">Stroke</option>
+                <option value="Medical Emergency">Medical Emergency</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-severity-select">Severity Level *</label>
+              <select id="emg-severity-select" class="form-select" required>
+                <option value="Critical">Critical (Immediate ALS Dispatch Required)</option>
+                <option value="High">High (Severe Trauma / High Urgency)</option>
+                <option value="Medium" selected>Medium (Standard Medical Emergency)</option>
+                <option value="Low">Low (Non-acute / Routine Transport)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-area-select">Bangalore Area / Sector *</label>
+              <select id="emg-area-select" class="form-select" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-landmark-input">Landmark / Street Address</label>
+              <input type="text" id="emg-landmark-input" class="form-control" placeholder="Near Metro Station / Signal">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-lat-input">Latitude (auto-filled) *</label>
+              <input type="number" step="any" id="emg-lat-input" class="form-control font-mono" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="emg-lng-input">Longitude (auto-filled) *</label>
+              <input type="number" step="any" id="emg-lng-input" class="form-control font-mono" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="emg-desc-input">Triage Clinical Description *</label>
+              <textarea id="emg-desc-input" class="form-control" rows="2" placeholder="Clinical observations, patient consciousness, visible injuries..." required></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-new-emergency').classList.remove('modal-visible')">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-ripple"><i class="fa-solid fa-paper-plane me-1"></i> Register & Queue Dispatch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Register Ambulance -->
+  <div id="modal-new-ambulance" class="custom-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-amb-title">
+    <div class="custom-modal-box">
+      <div class="modal-header">
+        <h3 id="modal-amb-title" class="modal-title"><i class="fa-solid fa-truck-medical text-primary me-2"></i> Register New Ambulance Unit</h3>
+        <button id="btn-close-ambulance-modal" class="btn-close-modal" aria-label="Close dialog">&times;</button>
+      </div>
+      <form id="form-register-ambulance">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label" for="amb-vehicle-number">Vehicle Registration Number *</label>
+              <input type="text" id="amb-vehicle-number" class="form-control font-mono" placeholder="KA-01-XY-9999" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="amb-type-select">Vehicle Classification *</label>
+              <select id="amb-type-select" class="form-select" required>
+                <option value="Advanced Life Support">Advanced Life Support (ALS)</option>
+                <option value="Basic Life Support" selected>Basic Life Support (BLS)</option>
+                <option value="Patient Transport Vehicle">Patient Transport Vehicle (PTV)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="amb-driver-name">Primary Driver / Paramedic *</label>
+              <input type="text" id="amb-driver-name" class="form-control" placeholder="Driver Full Name" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="amb-driver-phone">Driver Contact Phone *</label>
+              <input type="tel" id="amb-driver-phone" class="form-control" placeholder="+91 98450 00000" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="amb-area-select">Home Station Base (Bangalore Area) *</label>
+              <select id="amb-area-select" class="form-select" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-new-ambulance').classList.remove('modal-visible')">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-ripple"><i class="fa-solid fa-check me-1"></i> Register to Fleet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JavaScript Modules in Dependency Order -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/dispatch.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
